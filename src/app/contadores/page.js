@@ -1,29 +1,84 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { DateTime } from "luxon";
 
 export default function CriarContador() {
   const [nameContador, setNameContador] = useState("");
   const [InputDate, setInputDate] = useState("");
   const [InputTime, setInputTime] = useState("");
-  const [saveValueNameContador, setsaveValueNameContador] = useState([]);
-  const getDate = new Date();
-  const Hour = getDate.getHours();
-  const Min = getDate.getMinutes();
-  const currentDate = getDate.toDateString().slice(3);
+  const [showCounter, setShowCounter] = useState(false);
+  const [year, setYear] = useState(0);
+  const [month, setMonth] = useState(0);
+  const [day, setDay] = useState(0);
+  const [minutes, setMinutes] = useState(0);
+  const [hour, setHour] = useState(0);
+  const [seconds, setSeconds] = useState(0);
 
-  const saveLocalStorage = () => {
-    if (!nameContador.trim() !== "") {
-      const newValueNameContador = [...saveValueNameContador, nameContador];
-      setsaveValueNameContador(newValueNameContador);
-      localStorage.setItem("Nome do Contador", newValueNameContador);
-    }
+  const saveInputData = () => {
+    if (!InputDate || !InputTime) return;
+    const [year, month, day] = InputDate.split("-").map(Number);
+    const [hour, minute] = InputTime.split(":").map(Number);
+    const targetDate = DateTime.fromObject({
+      year: year,
+      month: month,
+      day: day,
+      hour: hour,
+      minute: minute,
+      second: 0,
+    });
+    const duration = DateTime.now()
+      .diff(targetDate, [
+        "years",
+        "months",
+        "days",
+        "hours",
+        "minutes",
+        "seconds",
+      ])
+      .shiftTo("years", "months", "days", "hours", "minutes", "seconds")
+      .toObject();
+
+    setShowCounter(true);
+    setHour(duration.hours);
+    setMinutes(duration.minutes);
+    setDay(duration.days);
+    setMonth(duration.months);
+    setYear(duration.years);
+    setSeconds(Math.floor(duration.seconds || 0));
   };
-  const handlesubmit = (e) => {
-    e.preventDefault();
-    setNameContador("");
-    setInputDate("");
-    setInputTime("");
-  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const [year, month, day] = InputDate.split("-").map(Number);
+      const [hour, minute] = InputTime.split(":").map(Number);
+      const targetDate = DateTime.fromObject({
+        year: year,
+        month: month,
+        day: day,
+        hour: hour,
+        minute: minute,
+        second: 0,
+      });
+      const duration = DateTime.now()
+        .diff(targetDate, [
+          "years",
+          "months",
+          "days",
+          "hours",
+          "minutes",
+          "seconds",
+        ])
+        .shiftTo("years", "months", "days", "hours", "minutes", "seconds")
+        .toObject();
+
+      setHour(duration.hours);
+      setMinutes(duration.minutes);
+      setDay(duration.days);
+      setMonth(duration.months);
+      setYear(duration.years);
+      setSeconds(Math.floor(duration.seconds || 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [showCounter, InputDate, InputTime]);
 
   return (
     <div className="">
@@ -33,7 +88,7 @@ export default function CriarContador() {
         </button>
 
         <div className="flex flex-col">
-          <form onSubmit={handlesubmit} className="flex flex-col">
+          <form className="flex flex-col">
             <span>Adicione um nome ao seu contador:</span>
             <input
               type="text"
@@ -44,29 +99,40 @@ export default function CriarContador() {
             />
             <span>Data:</span>
             <input
-              type="number"
+              type="date"
               className="border-2 m-1"
-              placeholder={`${currentDate}`}
+              placeholder=""
               value={InputDate}
               onChange={(e) => setInputDate(e.target.value)}
             />
             <span>Horário:</span>
             <input
-              type="number"
+              type="time"
               className="border-2 m-1"
-              placeholder={` ${
-                Min.toString().length < 2
-                  ? " " + Hour + ":" + "0" + Min
-                  : " " + Hour + ":" + Min
-              }  `}
+              placeholder=""
               value={InputTime}
               onChange={(e) => setInputTime(e.target.value)}
             />
           </form>
-          <button type="submit" onClick={saveLocalStorage}>
+          <button type="submit" onClick={saveInputData}>
             Enviar
           </button>
         </div>
+        {/* este trecho tem que ser atualizado a cada segudo!
+         */}
+        {showCounter && (
+          <div className="bg-amber-50 flex justify-center  h-28">
+            <div className="flex flex-col items-center">
+              <h1 className="font-bold">{nameContador}</h1>
+              <div className="flex">
+                <h1 className="font-bold">
+                  {year} Anos {month} Meses {day} Dias {hour} Horas {minutes}{" "}
+                  Minutos e {seconds} Segundos
+                </h1>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
